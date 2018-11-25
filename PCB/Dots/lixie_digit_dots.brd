@@ -93,6 +93,7 @@
 <layer number="114" name="Glasscheiben" color="30" fill="1" visible="yes" active="yes"/>
 <layer number="115" name="Blende" color="63" fill="1" visible="yes" active="yes"/>
 <layer number="116" name="Patch_BOT" color="9" fill="4" visible="no" active="yes"/>
+<layer number="117" name="Halterung" color="31" fill="1" visible="yes" active="yes"/>
 <layer number="118" name="Rect_Pads" color="7" fill="1" visible="no" active="no"/>
 <layer number="121" name="_tsilk" color="7" fill="1" visible="no" active="yes"/>
 <layer number="122" name="_bsilk" color="7" fill="1" visible="no" active="yes"/>
@@ -10886,25 +10887,33 @@
 <text x="62" y="-2" size="1.27" layer="51" font="vector" align="bottom-right">[OSHW] US000054</text>
 <text x="62" y="39" size="1.27" layer="51" font="vector" ratio="11" align="bottom-right">Last Updated:
 December 16th, 2016</text>
-<wire x1="4.5" y1="6" x2="11.1" y2="6" width="0.1" layer="114"/>
-<wire x1="11.1" y1="6" x2="11.1" y2="7.5" width="0.1" layer="114"/>
-<wire x1="11.1" y1="7.5" x2="4.5" y2="7.5" width="0.1" layer="114"/>
-<wire x1="4.5" y1="7.5" x2="4.5" y2="6" width="0.1" layer="114"/>
-<wire x1="4.5" y1="13.5" x2="11.1" y2="13.5" width="0.1" layer="114"/>
-<wire x1="11.1" y1="13.5" x2="11.1" y2="15" width="0.1" layer="114"/>
-<wire x1="11.1" y1="15" x2="4.5" y2="15" width="0.1" layer="114"/>
-<wire x1="4.5" y1="15" x2="4.5" y2="13.5" width="0.1" layer="114"/>
-<wire x1="4.5" y1="21" x2="11.1" y2="21" width="0.1" layer="114"/>
-<wire x1="11.1" y1="21" x2="11.1" y2="22.5" width="0.1" layer="114"/>
-<wire x1="11.1" y1="22.5" x2="4.5" y2="22.5" width="0.1" layer="114"/>
-<wire x1="4.5" y1="22.5" x2="4.5" y2="21" width="0.1" layer="114"/>
-<wire x1="4.5" y1="28.5" x2="11.1" y2="28.5" width="0.1" layer="114"/>
-<wire x1="11.1" y1="28.5" x2="11.1" y2="30" width="0.1" layer="114"/>
-<wire x1="11.1" y1="30" x2="4.5" y2="30" width="0.1" layer="114"/>
-<wire x1="4.5" y1="30" x2="4.5" y2="28.5" width="0.1" layer="114"/>
+<wire x1="3" y1="6" x2="12.6" y2="6" width="0.1" layer="117"/>
+<wire x1="12.6" y1="6" x2="12.6" y2="7.5" width="0.1" layer="117"/>
+<wire x1="12.6" y1="7.5" x2="3" y2="7.5" width="0.1" layer="117"/>
+<wire x1="3" y1="7.5" x2="3" y2="6" width="0.1" layer="117"/>
+<wire x1="3" y1="13.5" x2="12.6" y2="13.5" width="0.1" layer="117"/>
+<wire x1="12.6" y1="13.5" x2="12.6" y2="15" width="0.1" layer="117"/>
+<wire x1="12.6" y1="15" x2="3" y2="15" width="0.1" layer="117"/>
+<wire x1="3" y1="15" x2="3" y2="13.5" width="0.1" layer="117"/>
+<wire x1="3" y1="21" x2="12.6" y2="21" width="0.1" layer="117"/>
+<wire x1="12.6" y1="21" x2="12.6" y2="22.5" width="0.1" layer="117"/>
+<wire x1="12.6" y1="22.5" x2="3" y2="22.5" width="0.1" layer="117"/>
+<wire x1="3" y1="22.5" x2="3" y2="21" width="0.1" layer="117"/>
+<wire x1="3" y1="28.5" x2="12.6" y2="28.5" width="0.1" layer="117"/>
+<wire x1="12.6" y1="28.5" x2="12.6" y2="30" width="0.1" layer="117"/>
+<wire x1="12.6" y1="30" x2="3" y2="30" width="0.1" layer="117"/>
+<wire x1="3" y1="30" x2="3" y2="28.5" width="0.1" layer="117"/>
 <text x="-2.5" y="36" size="1.778" layer="1" rot="R270">Lixie Dot</text>
 <text x="-1" y="36" size="1.778" layer="16" rot="MR270">RTCUSTOMZ
 V1.0</text>
+<wire x1="0" y1="36.1" x2="15.6" y2="36.1" width="0.1" layer="117"/>
+<wire x1="15.6" y1="36.1" x2="15.6" y2="0" width="0.1" layer="117"/>
+<wire x1="15.6" y1="0" x2="0" y2="0" width="0.1" layer="117"/>
+<circle x="2.8" y="33.1" radius="1.5" width="0.1" layer="117"/>
+<circle x="12.8" y="33.1" radius="1.5" width="0.1" layer="117"/>
+<circle x="2.8" y="3" radius="1.5" width="0.1" layer="117"/>
+<circle x="12.8" y="3" radius="1.5" width="0.1" layer="117"/>
+<wire x1="0" y1="0" x2="0" y2="36.1" width="0" layer="117"/>
 <wire x1="5.8" y1="30" x2="9.8" y2="30" width="0.1" layer="115"/>
 <wire x1="9.8" y1="30" x2="9.8" y2="28.5" width="0.1" layer="115"/>
 <wire x1="9.8" y1="28.5" x2="5.8" y2="28.5" width="0.1" layer="115"/>
@@ -10928,6 +10937,31 @@ V1.0</text>
 <circle x="12.8" y="33.1" radius="1.5" width="0.1" layer="115"/>
 <circle x="2.8" y="3" radius="1.5" width="0.1" layer="115"/>
 <circle x="12.8" y="3" radius="1.5" width="0.1" layer="115"/>
+<wire x1="0" y1="0" x2="0" y2="36.1" width="0" layer="115"/>
+<wire x1="4.5" y1="6" x2="11.1" y2="6" width="0.1" layer="114"/>
+<wire x1="11.1" y1="6" x2="11.1" y2="7.5" width="0.1" layer="114"/>
+<wire x1="11.1" y1="7.5" x2="4.5" y2="7.5" width="0.1" layer="114"/>
+<wire x1="4.5" y1="7.5" x2="4.5" y2="6" width="0.1" layer="114"/>
+<wire x1="4.5" y1="13.5" x2="11.1" y2="13.5" width="0.1" layer="114"/>
+<wire x1="11.1" y1="13.5" x2="11.1" y2="15" width="0.1" layer="114"/>
+<wire x1="11.1" y1="15" x2="4.5" y2="15" width="0.1" layer="114"/>
+<wire x1="4.5" y1="15" x2="4.5" y2="13.5" width="0.1" layer="114"/>
+<wire x1="4.5" y1="21" x2="11.1" y2="21" width="0.1" layer="114"/>
+<wire x1="11.1" y1="21" x2="11.1" y2="22.5" width="0.1" layer="114"/>
+<wire x1="11.1" y1="22.5" x2="4.5" y2="22.5" width="0.1" layer="114"/>
+<wire x1="4.5" y1="22.5" x2="4.5" y2="21" width="0.1" layer="114"/>
+<wire x1="4.5" y1="28.5" x2="11.1" y2="28.5" width="0.1" layer="114"/>
+<wire x1="11.1" y1="28.5" x2="11.1" y2="30" width="0.1" layer="114"/>
+<wire x1="11.1" y1="30" x2="4.5" y2="30" width="0.1" layer="114"/>
+<wire x1="4.5" y1="30" x2="4.5" y2="28.5" width="0.1" layer="114"/>
+<wire x1="0" y1="36.1" x2="15.6" y2="36.1" width="0.1" layer="114"/>
+<wire x1="15.6" y1="36.1" x2="15.6" y2="0" width="0.1" layer="114"/>
+<wire x1="15.6" y1="0" x2="0" y2="0" width="0.1" layer="114"/>
+<circle x="2.8" y="33.1" radius="1.5" width="0.1" layer="114"/>
+<circle x="12.8" y="33.1" radius="1.5" width="0.1" layer="114"/>
+<circle x="2.8" y="3" radius="1.5" width="0.1" layer="114"/>
+<circle x="12.8" y="3" radius="1.5" width="0.1" layer="114"/>
+<wire x1="0" y1="0" x2="0" y2="36.1" width="0" layer="114"/>
 </plain>
 <libraries>
 <library name="adafruit">
