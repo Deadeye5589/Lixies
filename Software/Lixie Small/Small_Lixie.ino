@@ -17,13 +17,13 @@
 
 
 // Wifi credentials
-char ssid[] = "Change to your SSID";  
-char pass[] = "Change to your WLAN password";  
+char ssid[] = "your_ssid";  
+char pass[] = "your_password";  
 
 // Configure Lixie
 #define DATA_PIN   0 // Pin to drive Lixies
 #define NUM_LIXIES 5  // How many Lixies you have
-Lixie lix(DATA_PIN, NUM_LIXIES);
+Lixie_II lix(DATA_PIN, NUM_LIXIES);
 
 // Define RTC interrupt pin
 #define RTCsecondInterrupt 13
@@ -33,9 +33,17 @@ RtcDS3231<TwoWire> rtcObject(Wire);
 
 // Variables
 volatile bool marker = 1;
-volatile int sekunde = 0;
 volatile bool updateclock = 0;
-uint16_t zeit = 0;
+bool wifi_connected = 0;
+
+// Timekeeping variables
+uint32_t zeit = 0;
+int tag = 0;
+int monat = 0;
+int jahr = 0;
+volatile int sekunde = 0;
+int minu = 0;
+int stunde = 0;
 
 
 // ntp flag
@@ -72,7 +80,7 @@ void title(){
   Serial.println(F(" by Christopher                   "));
   Serial.println(F(" For RTCUSTOMZ of B.I.E.R.        "));
   Serial.println();
-  Serial.println(F(" V0.1                             "));
+  Serial.println(F(" V0.2                             "));
   Serial.println(F("----------------------------------"));
 }
 
@@ -82,10 +90,14 @@ void fill_zero(){
   lix.write(pow(10,(NUM_LIXIES))); // gets number big enough for NUM_LIXIES
 }
 
+
+// ISR triggered each second by RTC
+// Activate main loop to update clock each minute
+// Also helps to toggle :
 void ISR_ATTR SecondsTick(){
   Serial.println(sekunde);
   sekunde++;
-  if(sekunde > 60){
+  if(sekunde > 59){
     sekunde = 0;
     updateclock = 1;
   }
@@ -105,16 +117,75 @@ void setup() {
 
   title();
 
+  lix.begin(); // Initialize LEDs
+  lix.brightness(1.0); // 0-255
+
+  // Try to connect to the WLAN
   WiFi.begin(ssid, pass);
   
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+   for (int cnt = 0; cnt < 10; cnt++)                                          // check 15 seconds if connected
+  {
+      lix.sweep_color(CRGB(0,0,255), 20, 5);                                   //Sweep idle
+      if (WiFi.status() == WL_CONNECTED)
+      {
+          wifi_connected = true;
+          break;
+      }
+      Serial.println("Connecting...");
+      delay(500);
   }
 
+  // Connect to the RTC
   rtcObject.Begin(); // conneect to RTC
 
+  // If we have Wifi, we will get the current time from the NTP
+  if(wifi_connected){
+    Serial.println("Setup sync with NTP service.");
+    setSyncProvider(getNTP_UTCTime1970);
+    setSyncInterval(86400); // NTP re-sync; i.e. 86400 sec would be once per day
+    yield();
+    time_t tT = now();
+    time_t tTlocal = CE.toLocal(tT);
+    tag = day(tTlocal);
+    monat = month(tTlocal);
+    jahr = year(tTlocal);
+    sekunde = second(tTlocal);
+    minu = minute(tTlocal);
+    stunde = hour(tTlocal);
+    Serial.println(tag);
+    Serial.println(monat);
+    Serial.println(jahr);
+    Serial.println(stunde);
+    Serial.println(minu);
+    Serial.println(sekunde);
+  
+    yield();
+  
+    RtcDateTime currentTime = RtcDateTime(jahr,monat,tag,stunde,minu,sekunde); //define date and time object
+    rtcObject.SetDateTime(currentTime);
+    zeit = (stunde * 100) + minu;
+  }
+  // Otherwise we load the time stored in the RTC and hope that it was keeping track 
+  else{
+    Serial.println("No Wifi, fetching last saved time from RTC");
+    RtcDateTime currentTime = rtcObject.GetDateTime();
+    zeit = currentTime.Hour() * 100 + currentTime.Minute();
+    sekunde = currentTime.Second();
+  }
+
+  // Set the RTC to give as an interrupt each second
+  rtcObject.Enable32kHzPin(false);
+  rtcObject.SetSquareWavePin(DS3231SquareWavePin_ModeClock);
+  rtcObject.SetSquareWavePinClockFrequency(DS3231SquareWaveClock_1Hz);
+  rtcObject.SetIsRunning(true);
+
+  // feed the watchdogs
+  yield();
+
+  // Start the lixie and fill display with zeros
+  // Then display the current time
   lix.begin(); // Initialize LEDs
-  lix.brightness(255); // 0-255
+  lix.brightness(1.0); // 0-255
   lix.white_balance(Tungsten100W); // Default
     // Can be: Tungsten40W, Tungsten100W,  
     //         Halogen,     CarbonArc,
@@ -123,59 +194,12 @@ void setup() {
     // 2,600K - 20,000K
   fill_zero();
 
-  if (timeStatus()==timeNotSet)
-    {
-      bNTPStarted=false;
-      Serial.println("Setup sync with NTP service.");
-      setSyncProvider(getNTP_UTCTime1970);
-      setSyncInterval(86400); // NTP re-sync; i.e. 86400 sec would be once per day
-    }
-  else
-    {
-      bNTPStarted=true;   // only position, where we set this flag to true
-    }
-  yield();
-
-  time_t tT = now();
-  time_t tTlocal = CE.toLocal(tT);
-
-  int tag = day(tTlocal);
-  int monat = month(tTlocal);
-  int jahr = year(tTlocal);
-  sekunde = second(tTlocal);
-  int minu = minute(tTlocal);
-  int stunde = hour(tTlocal);
-  Serial.println(tag);
-  Serial.println(monat);
-  Serial.println(jahr);
-  Serial.println(stunde);
-  Serial.println(minu);
-  Serial.println(sekunde);
-
-  yield();
-
-  RtcDateTime currentTime = RtcDateTime(jahr,monat,tag,stunde,minu,sekunde); //define date and time object
-  rtcObject.SetDateTime(currentTime);
-  rtcObject.Enable32kHzPin(false);
-  rtcObject.SetSquareWavePin(DS3231SquareWavePin_ModeClock);
-  rtcObject.SetSquareWavePinClockFrequency(DS3231SquareWaveClock_1Hz);
-  rtcObject.SetIsRunning(true);
-
-  zeit = stunde * 100 + minu;
-
-  yield();
-  
-  // Intro
-  //fill_zero();
   lix.nixie_mode(true); // Activate Nixie Mode
   lix.nixie_aura_intensity(8); // Default aural intensity is 8 (0-255)
 
-  //lix.color(CHSV(0,255,255));
-  //lix.color_off(CHSV(127,255,127));
-
   lix.write(zeit);
 
-  // setup external interupt 
+  // setup external interupt and now the main loop will take over the clock display
   attachInterrupt(digitalPinToInterrupt(RTCsecondInterrupt), SecondsTick, FALLING);
 }
 
