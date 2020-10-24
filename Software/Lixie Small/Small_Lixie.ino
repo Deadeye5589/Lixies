@@ -199,11 +199,9 @@ void setup() {
 
     bool open_softAP_worked = WiFi.softAP(own_ap_ssid, own_ap_pass); 
     Serial.println( open_softAP_worked ? "Ready" : "Failed!");
-
-    Serial.print("Soft-AP IP address = ");
-    Serial.println(WiFi.softAPIP());
     
     server.begin();
+    Serial.printf("Webserver gestartet, öffnen Sie %s in einem Webbrowser\n", WiFi.softAPIP().toString().c_str());
   }
 
   // Set the RTC to give as an interrupt each second
@@ -236,9 +234,30 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(RTCsecondInterrupt), SecondsTick, FALLING);
 }
 
+String prepareHtmlPage(){
+    String htmlPage =
+        String("HTTP/1.1 200 OK\r\n") +
+                "Content-Type: text/html\r\n" +
+                "Connection: close\r\n" +  // Die Verbindung wird nach der Übertragung geschlossen
+                "Refresh: 5\r\n" +  // Automatisch alle 5 Sekunden neu laden
+                "\r\n" +
+                "<!DOCTYPE HTML>" +
+                "<html>" +
+                "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
+                "<link rel=\"icon\" href=\"data:,\"></head>" +
+                "<body>" +
+                "<h1 align=\"center\">Hier spricht dein Server! :)</h1>" +
+                "Aktuelle IP:  " + WiFi.softAPIP().toString().c_str() +
+                "</body>" +
+                "</html>" +
+                "\r\n";
+    return htmlPage;
+  }
+
 void makeWebServer(){
   WiFiClient client = server.available();   // Auf Clients (Server-Aufrufe) warten
 
+  
   if (client) {                             // Bei einem Aufruf des Servers
     Serial.println("Client available");
     String currentLine = "";                // String definieren für die Anfrage des Clients
@@ -246,38 +265,18 @@ void makeWebServer(){
     while (client.connected()) { // Loop, solange Client verbunden ist
 
       if (client.available()) {
-        char c = client.read();             // Ein (1) Zeichen der Anfrage des Clients lesen
-        Serial.write(c);                    // und es im Seriellen Monitor ausgeben
-        header += c;
-        if (c == '\n') {                    // bis eine Neue Zeile ausgegeben wird
-
-          // Wenn der Client eine Leerzeile sendet, ist das Ende des HTTP Request erreicht
-          if (currentLine.length() == 0) {
-
-            // Der Server sendet nun eine Antwort an den Client
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/html");
-            client.println("Connection: close");
-            client.println();
-
-            // Die Webseite anzeigen
-            client.println("<!DOCTYPE html><html>");
-            client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-            client.println("<link rel=\"icon\" href=\"data:,\"></head>");
-            client.println("<body><h1 align=\"center\">Hier spricht dein Server! :)</h1></body></html>");
-
-            // Die Antwort mit einer Leerzeile beenden
-            client.println();
-            // Den Loop beenden
-            break;
-          } else { // Bei einer Neuen Zeile, die Variable leeren
-            currentLine = "";
-          }
-        } else if (c != '\r') {  // alles andere als eine Leerzeile wird
-          currentLine += c;      // der Variable hinzugefüht
+              
+        String line = client.readStringUntil('\r');
+        Serial.print(line);
+        // bis zum Ende der Anfrage warten (=Leerzeile)
+        if (line.length() == 1 && line[0] == '\n'){
+          client.println(prepareHtmlPage()); // Antwort ausgeben
+          break;
         }
+      
       }
     }
+    delay(1000);
     // Variable für den Header leeren
     header = "";
     // Die Verbindung beenden
@@ -286,6 +285,7 @@ void makeWebServer(){
     Serial.println("");
   }
 }
+
 
 void loop() {
     makeWebServer();
