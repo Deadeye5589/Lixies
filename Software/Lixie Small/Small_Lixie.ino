@@ -10,11 +10,15 @@
 #include "Lixiesmall.h" // Include Lixie Library
 #include "time_ntp.h"
 #include <ESP8266WiFi.h>
+#include "webserver_functions.h"
 #include <WiFiUdp.h>    // Built-in Arduino
 #include <TimeLib.h>    // Time   -> Michael Margolis
 #include <Timezone.h>   // Timezone  -> Jack Christensen
 #include <Wire.h>       // Built-in Arduino
 #include <RtcDS3231.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+
 // #include <DS3231.h>  // DS3231 -> Andrew Wickert
 
 
@@ -31,13 +35,11 @@ IPAddress local_IP(192,168,4,22);
 IPAddress gateway(192,168,4,9);
 IPAddress subnet(255,255,255,0);
 
-
-// Set port of web serve to 80
-WiFiServer server(80);
-
 // Variable for the HTTP Request
 String header;
 
+// Create RTC object for HW I2C
+RtcDS3231<TwoWire> rtcObject(Wire);
 
 // Configure Lixie
 #define DATA_PIN   2 // Pin to drive Lixies
@@ -46,9 +48,6 @@ Lixie_II lix(DATA_PIN, NUM_LIXIES);
 
 // Define RTC interrupt pin
 #define RTCsecondInterrupt 13
-
-// Create RTC object for HW I2C
-RtcDS3231<TwoWire> rtcObject(Wire);
 
 // Variables
 volatile bool marker = 1;
@@ -129,7 +128,6 @@ void ISR_ATTR SecondsTick(){
 }
 
 
-
 // Setup Routine
 void setup() {
   Serial.begin(115200);
@@ -150,13 +148,13 @@ void setup() {
           wifi_connected = true;
           break;
       } 
-      Serial.print("Trying to connect... Try number:");
-      Serial.println(cnt);
+      Serial.print(".");
       delay(500);
   }
 
   // Connect to the RTC
-  rtcObject.Begin(); // conneect to RTC
+  Serial.println("");
+  rtcObject.Begin(); // connect to RTC
 
   // If we have Wifi, we will get the current time from the NTP
   if(wifi_connected){
@@ -199,9 +197,8 @@ void setup() {
 
     bool open_softAP_worked = WiFi.softAP(own_ap_ssid, own_ap_pass); 
     Serial.println( open_softAP_worked ? "Ready" : "Failed!");
-    
-    server.begin();
-    Serial.printf("Webserver gestartet, öffnen Sie %s in einem Webbrowser\n", WiFi.softAPIP().toString().c_str());
+
+    initWebserver();      
   }
 
   // Set the RTC to give as an interrupt each second
@@ -234,61 +231,11 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(RTCsecondInterrupt), SecondsTick, FALLING);
 }
 
-String prepareHtmlPage(){
-    String htmlPage =
-        String("HTTP/1.1 200 OK\r\n") +
-                "Content-Type: text/html\r\n" +
-                "Connection: close\r\n" +  // Die Verbindung wird nach der Übertragung geschlossen
-                "Refresh: 5\r\n" +  // Automatisch alle 5 Sekunden neu laden
-                "\r\n" +
-                "<!DOCTYPE HTML>" +
-                "<html>" +
-                "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
-                "<link rel=\"icon\" href=\"data:,\"></head>" +
-                "<body>" +
-                "<h1 align=\"center\">Hier spricht dein Server! :)</h1>" +
-                "Aktuelle IP:  " + WiFi.softAPIP().toString().c_str() +
-                "</body>" +
-                "</html>" +
-                "\r\n";
-    return htmlPage;
-  }
 
-void makeWebServer(){
-  WiFiClient client = server.available();   // Auf Clients (Server-Aufrufe) warten
-
-  
-  if (client) {                             // Bei einem Aufruf des Servers
-    Serial.println("Client available");
-    String currentLine = "";                // String definieren für die Anfrage des Clients
-
-    while (client.connected()) { // Loop, solange Client verbunden ist
-
-      if (client.available()) {
-              
-        String line = client.readStringUntil('\r');
-        Serial.print(line);
-        // bis zum Ende der Anfrage warten (=Leerzeile)
-        if (line.length() == 1 && line[0] == '\n'){
-          client.println(prepareHtmlPage()); // Antwort ausgeben
-          break;
-        }
-      
-      }
-    }
-    delay(1000);
-    // Variable für den Header leeren
-    header = "";
-    // Die Verbindung beenden
-    client.stop();
-    Serial.println("Client disconnected");
-    Serial.println("");
-  }
-}
 
 
 void loop() {
-    makeWebServer();
+    server.handleClient();
     if(marker == 1)
       lix.write_fade(zeit+30000);
     else
