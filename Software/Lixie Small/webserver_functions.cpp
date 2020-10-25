@@ -1,29 +1,27 @@
 #include "webserver_functions.h"
 
-// Set port of web serve to 80
-ESP8266WebServer server(80);
 
 void printWebsiteToClient(){
   String htmlPage =
     String("<!DOCTYPE HTML>") +
-    "<html>" +
-      "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
-      "<link rel=\"icon\" href=\"data:,\">" +
-    "</head>" +
-    "<body>" +
-      "<h1 align=\"center\">Hier spricht dein Server! :)</h1>" +
+    "<html>" 
+      "<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" 
+      "<link rel=\"icon\" href=\"data:,\">" 
+    "</head>" 
+    "<body>" 
+      "<h1 align=\"center\">Hier spricht dein Server! :)</h1>" 
       "Aktuelle IP:  " + WiFi.softAPIP().toString().c_str() +
-      "<h1>Time</h1>" +
-      "<form action=\"/action_page\">" +
-        "<input type='text' name='time_hh' id='time_hh' size=2 autofocus> hh" +
-        "<input type='text' name='time_mm' id='time_mm' size=2 autofocus> mm" +
-        "<input type='text' name='time_ss' id='time_ss' size=2 autofocus> ss" +
-        "<div>" +
-          "<br><button id=\"save_button\">Save</button>" +
-        "</div>" +
-      "</form>" +
-    "</body>" +
-    "</html>" +
+      "<h1>Time</h1>" 
+      "<form action=\"/action_page\">" 
+        "<input type='text' name='time_hh' id='time_hh' size=2 autofocus> hh" 
+        "<input type='text' name='time_mm' id='time_mm' size=2 autofocus> mm" 
+        "<input type='text' name='time_ss' id='time_ss' size=2 autofocus> ss" 
+        "<div>" 
+          "<br><button id=\"save_button\">Save</button>" 
+        "</div>" 
+      "</form>" 
+    "</body>" 
+    "</html>" 
     "\r\n";
   server.send(200, "text/html", htmlPage); //Send web page
 }

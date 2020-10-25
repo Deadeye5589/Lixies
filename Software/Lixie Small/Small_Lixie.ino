@@ -9,13 +9,12 @@
 
 #include "Lixiesmall.h" // Include Lixie Library
 #include "time_ntp.h"
-#include <ESP8266WiFi.h>
 #include "webserver_functions.h"
+#include "rtc_functions.h"
+#include <ESP8266WiFi.h>
 #include <WiFiUdp.h>    // Built-in Arduino
 #include <TimeLib.h>    // Time   -> Michael Margolis
 #include <Timezone.h>   // Timezone  -> Jack Christensen
-#include <Wire.h>       // Built-in Arduino
-#include <RtcDS3231.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 
@@ -35,11 +34,12 @@ IPAddress local_IP(192,168,4,22);
 IPAddress gateway(192,168,4,9);
 IPAddress subnet(255,255,255,0);
 
+// Set port of web serve to 80
+ESP8266WebServer server(80);
+
 // Variable for the HTTP Request
 String header;
 
-// Create RTC object for HW I2C
-RtcDS3231<TwoWire> rtcObject(Wire);
 
 // Configure Lixie
 #define DATA_PIN   2 // Pin to drive Lixies
@@ -154,7 +154,7 @@ void setup() {
 
   // Connect to the RTC
   Serial.println("");
-  rtcObject.Begin(); // connect to RTC
+  startRTC();
 
   // If we have Wifi, we will get the current time from the NTP
   if(wifi_connected){
@@ -179,14 +179,13 @@ void setup() {
   
     yield();
   
-    RtcDateTime currentTime = RtcDateTime(jahr,monat,tag,stunde,minu,sekunde); //define date and time object
-    rtcObject.SetDateTime(currentTime);
+    setRTC(jahr,monat,tag,stunde,minu,sekunde);
     zeit = (stunde * 100) + minu;
   } 
   // Otherwise we load the time stored in the RTC and hope that it was keeping track 
   else{
     Serial.println("No Wifi, fetching last saved time from RTC");
-    RtcDateTime currentTime = rtcObject.GetDateTime();
+    RtcDateTime currentTime = getTimeFromMemory();
     zeit = currentTime.Hour() * 100 + currentTime.Minute();
     sekunde = currentTime.Second();
     
@@ -202,10 +201,8 @@ void setup() {
   }
 
   // Set the RTC to give as an interrupt each second
-  rtcObject.Enable32kHzPin(false);
-  rtcObject.SetSquareWavePin(DS3231SquareWavePin_ModeClock);
-  rtcObject.SetSquareWavePinClockFrequency(DS3231SquareWaveClock_1Hz);
-  rtcObject.SetIsRunning(true);
+  initRTC();
+  
 
   // feed the watchdogs
   yield();
@@ -242,7 +239,7 @@ void loop() {
       lix.write_fade(zeit+60000);
     if(updateclock){
       updateclock = 0;
-      RtcDateTime currentTime = rtcObject.GetDateTime();
+      RtcDateTime currentTime = getTimeFromMemory();
       zeit = currentTime.Hour() * 100 + currentTime.Minute();
       Serial.println(zeit);
     }
