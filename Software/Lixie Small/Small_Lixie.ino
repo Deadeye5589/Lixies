@@ -7,18 +7,25 @@
   (115200 Baud)
 */                                                                                                                
 
+#define LIXIE_IS_SMALL
+#ifdef LIXIE_IS_SMALL
+	#define SMALL_LIXIE
+#else
+	#define BIG_LIXIE
+#endif
+
 #include "Lixiesmall.h" // Include Lixie Library
 #include "time_ntp.h"
 #include "webserver_functions.h"
 #include "rtc_functions.h"
+#include "wifi_functions.h"
+#include "ntp_functions.h"
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>    // Built-in Arduino
 #include <TimeLib.h>    // Time   -> Michael Margolis
 #include <Timezone.h>   // Timezone  -> Jack Christensen
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
-
-// #include <DS3231.h>  // DS3231 -> Andrew Wickert
 
 
 // Wifi credentials
@@ -56,12 +63,12 @@ bool wifi_connected = 0;
 
 // Timekeeping variables
 uint32_t zeit = 0;
-int tag = 0;
-int monat = 0;
-int jahr = 0;
-volatile int sekunde = 0;
-int minu = 0;
-int stunde = 0;
+uint_fast8_t tag = 0;
+uint_fast8_t monat = 0;
+uint_fast16_t jahr = 0;
+volatile uint_fast8_t sekunde = 0;
+uint_fast8_t minu = 0;
+uint_fast8_t stunde = 0;
 
 
 // ntp flag
@@ -74,22 +81,6 @@ bool bNTPStarted=false;
 TimeChangeRule CEST = {"CEST", Last, Sun, Mar, 2, 120};     //Central European Summer Time
 TimeChangeRule CET = {"CET ", Last, Sun, Oct, 3, 60};       //Central European Standard Time
 Timezone CE(CEST, CET);
-
-
-///////////////////////////////////////////
-// get UTC time referenced to 1970 by NTP
-///////////////////////////////////////////
-time_t getNTP_UTCTime1970() 
-{ 
-  bNTPStarted=false;  // invalidate; time-lib functions crash, if not initalized poperly
-  unsigned long t = getNTPTimestamp();
-  if (t==0) return(0);
-
-  // scale to 1970 
-  // may look like back & forth with ntp code; wrote it to make needed conversions more clear
-  return(t+946684800UL);
-}
-
 
 // Greet the user.
 void title(){
@@ -108,37 +99,13 @@ void fill_zero(){
   lix.write(pow(10,(NUM_LIXIES))); // gets number big enough for NUM_LIXIES
 }
 
-
-// ISR triggered each second by RTC
-// Activate main loop to update clock each minute
-// Also helps to toggle :
-void ISR_ATTR SecondsTick(){
-  Serial.println(sekunde);
-  sekunde++;
-  if(sekunde > 59){
-    sekunde = 0;
-    updateclock = 1;
-  }
-  if(marker == 1){
-    marker = 0;
-  }
-  else{
-    marker = 1; 
-  }
-}
-
-
 // Setup Routine
 void setup() {
   Serial.begin(115200);
-
   title();
-
   lix.begin(); // Initialize LEDs
   lix.brightness(1.0); // 0-255
-
-  // Try to connect to the WLAN
-  WiFi.begin(ssid, pass);
+  WiFi.begin(ssid, pass); // Try to connect to the WLAN
   
   for (int cnt = 0; cnt < 10; cnt++)                                          // check 15 seconds if connected
   {
@@ -152,60 +119,31 @@ void setup() {
       delay(500);
   }
 
-  // Connect to the RTC
   Serial.println("");
-  startRTC();
+  connectRTC(); // Connect to the RTC
 
-  // If we have Wifi, we will get the current time from the NTP
-  if(wifi_connected){
-    Serial.println("Setup sync with NTP service.");
-    setSyncProvider(getNTP_UTCTime1970);
-    setSyncInterval(86400); // NTP re-sync; i.e. 86400 sec would be once per day
-    yield();
-    time_t tT = now();
-    time_t tTlocal = CE.toLocal(tT);
-    tag = day(tTlocal);
-    monat = month(tTlocal);
-    jahr = year(tTlocal);
-    sekunde = second(tTlocal);
-    minu = minute(tTlocal);
-    stunde = hour(tTlocal);
-    Serial.println(tag);
-    Serial.println(monat);
-    Serial.println(jahr);
-    Serial.println(stunde);
-    Serial.println(minu);
-    Serial.println(sekunde);
   
+  if(wifi_connected){			// If we have Wifi, we will get the current time from the NTP
+
+    getNTPTime();
     yield();
-  
     setRTC(jahr,monat,tag,stunde,minu,sekunde);
     zeit = (stunde * 100) + minu;
   } 
-  // Otherwise we load the time stored in the RTC and hope that it was keeping track 
-  else{
-    Serial.println("No Wifi, fetching last saved time from RTC");
-    RtcDateTime currentTime = getTimeFromMemory();
-    zeit = currentTime.Hour() * 100 + currentTime.Minute();
-    sekunde = currentTime.Second();
+   
+  else{ 				// Otherwise we load the time stored in the RTC and hope that it was keeping track
     
-    Serial.print("Setting soft-AP configuration ... ");
-    Serial.println(WiFi.softAPConfig(local_IP, gateway, subnet) ? "Ready" : "Failed!");
-
-    Serial.print("Setting soft-AP ... ");
-
-    bool open_softAP_worked = WiFi.softAP(own_ap_ssid, own_ap_pass); 
-    Serial.println( open_softAP_worked ? "Ready" : "Failed!");
-
+    getTimeFromMemory();
+    initSoftAP();
     initWebserver();      
   }
 
-  // Set the RTC to give as an interrupt each second
-  initRTC();
+  
+  initRTC();		// Set the RTC to give as an interrupt each second
   
 
-  // feed the watchdogs
-  yield();
+  
+  yield();			// feed the watchdogs
 
   // Start the lixie and fill display with zeros
   // Then display the current time
@@ -239,8 +177,6 @@ void loop() {
       lix.write_fade(zeit+60000);
     if(updateclock){
       updateclock = 0;
-      RtcDateTime currentTime = getTimeFromMemory();
-      zeit = currentTime.Hour() * 100 + currentTime.Minute();
-      Serial.println(zeit);
+      getTimeFromMemory();
     }
 }

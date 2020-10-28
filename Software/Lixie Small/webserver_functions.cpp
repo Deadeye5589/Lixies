@@ -41,6 +41,13 @@ void handleForm() {
   Serial.println(time_ss);
   
 
+  stunde = time_hh.toInt();
+  minu = time_mm.toInt();
+  sekunde = time_ss.toInt();
+
+  setRTC(jahr,monat, tag, stunde, minu, sekunde);
+  zeit = (stunde * 100) + minu;
+
   String s = "<a href='/'> Go Back </a>";
   server.send(200, "text/html", s); //Send web page
 }
