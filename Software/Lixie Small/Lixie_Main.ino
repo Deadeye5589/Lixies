@@ -7,14 +7,9 @@
   (115200 Baud)
 */                                                                                                                
 
-#define LIXIE_IS_SMALL
-#ifdef LIXIE_IS_SMALL
-	#define SMALL_LIXIE
-#else
-	#define BIG_LIXIE
-#endif
 
-#include "Lixiesmall.h" // Include Lixie Library
+#include "Lixie_Main.h"
+#include "Lixie_II.h" // Include Lixie Library
 #include "time_ntp.h"
 #include "webserver_functions.h"
 #include "rtc_functions.h"
@@ -29,17 +24,17 @@
 
 
 // Wifi credentials
-char ssid[] = "your_ssid";  
-char pass[] = "your_password";  
+const char ssid[] = "Deffy";  
+const char pass[] = "sursulapitschi";  
 
 // Wifi credentials for access point that is opened if the above ap cannot be connected
-char own_ap_ssid[] = "Lixie";  
-char own_ap_pass[] = "happylixie";  
+const char own_ap_ssid[] = "Lixie";  
+const char own_ap_pass[] = "happylixie";  
 
 // Wifi configuration
-IPAddress local_IP(192,168,4,22);
-IPAddress gateway(192,168,4,9);
-IPAddress subnet(255,255,255,0);
+const IPAddress local_IP(192,168,4,22);
+const IPAddress gateway(192,168,4,9);
+const IPAddress subnet(255,255,255,0);
 
 // Set port of web serve to 80
 ESP8266WebServer server(80);
@@ -50,7 +45,12 @@ String header;
 
 // Configure Lixie
 #define DATA_PIN   2 // Pin to drive Lixies
-#define NUM_LIXIES 5  // How many Lixies you have
+#ifdef SMALL_LIXIE
+  #define NUM_LIXIES 5  // How many Lixies you have
+#endif
+#ifdef BIG_LIXIE
+  #define NUM_LIXIES 7  // How many Lixies you have
+#endif
 Lixie_II lix(DATA_PIN, NUM_LIXIES);
 
 // Define RTC interrupt pin
@@ -59,6 +59,7 @@ Lixie_II lix(DATA_PIN, NUM_LIXIES);
 // Variables
 volatile bool marker = 1;
 volatile bool updateclock = 0;
+volatile bool switch_mode = 0;
 bool wifi_connected = 0;
 
 // Timekeeping variables
@@ -157,9 +158,9 @@ void setup() {
     // 2,600K - 20,000K
   fill_zero();
 
-  lix.nixie_mode(true); // Activate Nixie Mode
-  lix.nixie_aura_intensity(8); // Default aural intensity is 8 (0-255)
-
+  // lix.nixie_mode(false,false); // Activate Nixie Mode
+  // lix.nixie_aura_intensity(255); // Default aural intensity is 8 (0-255)
+lix.color_all(ON,CRGB(255,255,255));
   lix.write(zeit);
 
   // setup external interupt and now the main loop will take over the clock display
@@ -167,7 +168,15 @@ void setup() {
 }
 
 
-
+void switch_color(){
+  switch_mode = !switch_mode;
+  if(switch_mode){
+    lix.color_all(ON,CRGB(255,0,0));
+  }
+  else {
+    lix.color_all(ON,CRGB(255,255,255));
+  }
+}
 
 void loop() {
     server.handleClient();
@@ -178,5 +187,7 @@ void loop() {
     if(updateclock){
       updateclock = 0;
       getTimeFromMemory();
+      switch_color();
+      // lix.white_balance(DirectSunlight);
     }
 }

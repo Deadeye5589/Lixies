@@ -6,7 +6,7 @@
   Released under the GPLv3 License
 */
 
-#include "Lixiesmall.h"
+#include "Lixie_II.h"
 
 uint8_t get_size(uint32_t input);
 
@@ -14,16 +14,27 @@ uint8_t get_size(uint32_t input);
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 
-const uint8_t leds_per_digit = 10;
 uint8_t n_digits;      // Keeps the number of displays
 uint16_t n_LEDs;       // Keeps the number of LEDs based on display quantity.
 CLEDController *lix_controller; // FastLED 
 CRGB *lix_leds;
 
 // Order input 0 to 9 = {5, 6, 7, 8, 9, 0, 1, 2, 3, 4}
-// Order scheiben =     {6, 5, 7, 4, 8, 3, 9, 1, 0, 2 } 
-const uint8_t led_assignments[leds_per_digit] = { 3, 9, 1, 0, 2, 6, 5, 7, 4, 8}; 
-const uint8_t x_offsets[leds_per_digit]     = { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
+#ifdef SMALL_LIXIE
+  #define LEDS_PER_DIGIT 10
+  #define LEDS_IN_X_AXIS 5
+  // Order scheiben =     {6, 5, 7, 4, 8, 3, 9, 1, 0, 2 } 
+  const uint8_t led_assignments[LEDS_PER_DIGIT] = { 3, 9, 1, 0, 2, 6, 5, 7, 4, 8}; 
+  const uint8_t x_offsets[LEDS_PER_DIGIT]     = { 0, 1, 2, 3, 4, 0, 1, 2, 3, 4};
+#endif
+#ifdef BIG_LIXIE
+    #define LEDS_PER_DIGIT 30
+    #define LEDS_IN_X_AXIS 14
+    
+    // Order scheiben =     {6, 5, 4, 7, 8, 3, 9, 1, 0, 2 } 
+    const uint8_t led_assignments[LEDS_PER_DIGIT] = { 3, 9, 1, 0, 2, 6, 5, 4, 7, 8,   3, 9, 1, 0, 2, 6, 5, 4, 7, 8,   3, 9, 1, 0, 2, 6, 5, 4, 7, 8   }; 
+    const uint8_t x_offsets[LEDS_PER_DIGIT]     = { 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 8, 9, 10, 11, 12  };
+#endif
 uint8_t max_x_pos = 0;
 
 CRGB *col_on;
@@ -53,15 +64,15 @@ bool background_updates = true;
 #endif
 
 uint16_t led_to_x_pos(uint16_t led){
-  uint8_t led_digit_pos = x_offsets[led%10];
+  uint8_t led_digit_pos = x_offsets[led%LEDS_PER_DIGIT];
   
   uint8_t complete_digits = 0;
-  while(led >= leds_per_digit){
-    led -= leds_per_digit;
+  while(led >= LEDS_PER_DIGIT){
+    led -= LEDS_PER_DIGIT;
     complete_digits += 1;
   }
   
-  return max_x_pos - (led_digit_pos + (complete_digits*5));
+  return max_x_pos - (led_digit_pos + (complete_digits*LEDS_IN_X_AXIS));
 }
 
 void animate(){
@@ -104,7 +115,7 @@ void animate(){
     lix_leds[i] = new_col;  
   
   // Check for special pane enabled for the current digit, and use its color instead if it is.
-  uint8_t digit_index = i/leds_per_digit;
+  uint8_t digit_index = i/LEDS_PER_DIGIT;
   if(special_panes_enabled[digit_index]){
     if(pcb_index == 4){
       lix_leds[i] = special_panes_color[digit_index*2];
@@ -115,7 +126,7 @@ void animate(){
   }
   
     pcb_index++;
-  if(pcb_index >= leds_per_digit){
+  if(pcb_index >= LEDS_PER_DIGIT){
     pcb_index = 0;
   }
   }
@@ -175,9 +186,9 @@ void Lixie_II::stop_animation(){
 }
 
 Lixie_II::Lixie_II(const uint8_t pin, uint8_t number_of_digits){
-  n_LEDs = number_of_digits * leds_per_digit;
+  n_LEDs = number_of_digits * LEDS_PER_DIGIT;
   n_digits = number_of_digits;
-  max_x_pos = (number_of_digits * 5)-1;
+  max_x_pos = (number_of_digits * LEDS_IN_X_AXIS)-1;
   
   lix_leds = new CRGB[n_LEDs];  
   led_mask_0 = new uint8_t[n_LEDs];
@@ -351,28 +362,28 @@ void Lixie_II::push_digit(uint8_t number) {
   
   // If multiple displays, move all LED states forward one
   if (n_digits > 1) {
-    for (uint16_t i = n_LEDs - 1; i >= leds_per_digit; i--) {
+    for (uint16_t i = n_LEDs - 1; i >= LEDS_PER_DIGIT; i--) {
       if(current_mask == 0){
-        led_mask_0[i] = led_mask_0[i - leds_per_digit];
+        led_mask_0[i] = led_mask_0[i - LEDS_PER_DIGIT];
       }
       else{
-        led_mask_1[i] = led_mask_1[i - leds_per_digit];
+        led_mask_1[i] = led_mask_1[i - LEDS_PER_DIGIT];
       }
     }
   }
   
   // Clear the LED states for the first display
-  for (uint16_t i = 0; i < leds_per_digit; i++) {
+  for (uint16_t i = 0; i < LEDS_PER_DIGIT; i++) {
     if(current_mask == 0){
-      led_mask_0[i] = led_mask_0[i - leds_per_digit];
+      led_mask_0[i] = led_mask_0[i - LEDS_PER_DIGIT];
     }
     else{
-      led_mask_1[i] = led_mask_1[i - leds_per_digit];
+      led_mask_1[i] = led_mask_1[i - LEDS_PER_DIGIT];
     }
   }
   
   if(number != 128){
-    for(uint8_t i = 0; i < leds_per_digit; i++){
+    for(uint8_t i = 0; i < LEDS_PER_DIGIT; i++){
     if(led_assignments[i] == number){
       if(current_mask == 0){
       led_mask_0[i] = 255;
@@ -392,7 +403,7 @@ void Lixie_II::push_digit(uint8_t number) {
     }
   }
   else{
-    for(uint8_t i = 0; i < leds_per_digit; i++){
+    for(uint8_t i = 0; i < LEDS_PER_DIGIT; i++){
       if(current_mask == 0){
       led_mask_0[i] = 0;
       }
@@ -404,11 +415,11 @@ void Lixie_II::push_digit(uint8_t number) {
 }
 
 void Lixie_II::write_digit(uint8_t digit, uint8_t num){
-  uint16_t start_index = leds_per_digit*digit;
+  uint16_t start_index = LEDS_PER_DIGIT*digit;
   
   if(num < 10){
     clear_digit(digit,num);
-    for(uint8_t i = 0; i < leds_per_digit; i++){      
+    for(uint8_t i = 0; i < LEDS_PER_DIGIT; i++){      
       if(led_assignments[i] == num){
         
         if(current_mask == 0){
@@ -425,7 +436,7 @@ void Lixie_II::write_digit(uint8_t digit, uint8_t num){
 }
 
 void Lixie_II::clear_digit(uint8_t digit, uint8_t num){
-  uint16_t start_index = leds_per_digit*digit;
+  uint16_t start_index = LEDS_PER_DIGIT*digit;
   for(uint8_t i = 0; i < 22; i++){
     if(current_mask == 0){
       led_mask_1[start_index+i] = 0;//CRGB(0*0.06,100*0.06,255*0.06);   
@@ -487,7 +498,7 @@ void Lixie_II::color_all(uint8_t layer, CRGB col){
 void Lixie_II::color_all_dual(uint8_t layer, CRGB col_left, CRGB col_right){
   bool side = 1;
   for(uint16_t i = 0; i < n_LEDs; i++){
-    if(i % (leds_per_digit/2) == 0){
+    if(i % (LEDS_PER_DIGIT/2) == 0){
       side = !side;
     }
     
@@ -511,8 +522,8 @@ void Lixie_II::color_all_dual(uint8_t layer, CRGB col_left, CRGB col_right){
 }
 
 void Lixie_II::color_display(uint8_t display, uint8_t layer, CRGB col){
-  uint16_t start_index = leds_per_digit*display;
-  for(uint16_t i = 0; i < leds_per_digit; i++){
+  uint16_t start_index = LEDS_PER_DIGIT*display;
+  for(uint16_t i = 0; i < LEDS_PER_DIGIT; i++){
     if(layer == ON){
       col_on[start_index+i] = col;
     }
@@ -567,7 +578,7 @@ void Lixie_II::fade_out(){
 }
 
 void Lixie_II::streak(CRGB col, float pos, uint8_t blur){
-  float pos_whole = pos*n_digits*5; // 6 X-positions in a single display
+  float pos_whole = pos*n_digits*LEDS_IN_X_AXIS; // 6 X-positions in a single display
   
   for(uint16_t i = 0; i < n_LEDs; i++){
     uint16_t pos_delta = abs(led_to_x_pos(i) - pos_whole);
@@ -673,8 +684,8 @@ void Lixie_II::clear(bool show_change){
 }
 
 void Lixie_II::clear_digit(uint8_t index, bool show_change){
-  uint16_t start_index = index*leds_per_digit;  
-  for(uint16_t i = start_index; i < leds_per_digit; i++){
+  uint16_t start_index = index*LEDS_PER_DIGIT;  
+  for(uint16_t i = start_index; i < LEDS_PER_DIGIT; i++){
     led_mask_0[i] = 0.0;
     led_mask_1[i] = 0.0;
   }

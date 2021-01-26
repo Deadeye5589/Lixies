@@ -5,10 +5,11 @@
   Released under the GPLv3 License
 */
 
-#ifndef Lixiesmall_h
-#define Lixiesmall_h
+#ifndef LIXIE_II_h
+#define LIXIE_II_h
 
 #include "Arduino.h"
+#include "Lixie_Main.h"
 
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
   #include <Ticker.h> // ESP ONLY
