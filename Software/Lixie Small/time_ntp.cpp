@@ -13,7 +13,7 @@ code for time conversion based on http://stackoverflow.com/
 #include "time_ntp.h"
 
 // NTP specifics
-IPAddress timeServer(129, 6, 15, 28); // time.nist.gov NTP server
+IPAddress timeServer(132, 163, 97, 3); // time-c-wwv.nist.gov NTP server
 WiFiUDP udp;  // A UDP instance to let us send and receive packets over UDP
 unsigned int ntpPort = 2390;          // local port to listen for UDP packets
 const int NTP_PACKET_SIZE = 48;       // NTP time stamp is in the first 48 bytes of the message
