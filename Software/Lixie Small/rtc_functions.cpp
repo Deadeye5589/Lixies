@@ -47,6 +47,9 @@ void ISR_ATTR SecondsTick(){
   else{
     marker = 1; 
   }
+   if(sekunde % 10 == 0){
+    updatecolor = 1;
+  }
   #ifdef BIG_LIXIE
     zeit++;
   #endif
