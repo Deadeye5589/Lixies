@@ -8,6 +8,7 @@
 
     extern volatile bool marker;
     extern volatile bool updateclock;
+    extern volatile bool updatecolors;
 
     // Set port of web serve to 80
     extern uint32_t zeit;
